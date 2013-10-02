@@ -6,7 +6,7 @@ import bs4
 
 r = requests.get("http://localhost/da.html")
 
-soup = bs4.BeautifulSoup(r.text, "lxml")
+soup = bs4.BeautifulSoup(r.text, "html.parser")
 items = soup.find("ul", {"class": "productList"}).find_all("li")
 
 for item in items:
@@ -14,3 +14,8 @@ for item in items:
 	name = unicode(item.find("span", {"class": "prodName"}).string).strip()
 	location = unicode(item.find("span", {"class": "sgreen"}).next_sibling.string).strip()
 	price = unicode(item.find("span", {"class": "prodPret"}).string).strip()
+
+try:
+	next_page = soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]
+except Exception:
+	next_page = None
