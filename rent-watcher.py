@@ -11,11 +11,19 @@ import os
 
 def get_data(site, results, new_urls, paginate=True):
 	urls = [config[site]["start_url"]]
+	last_url = config[site]["start_url"]
+	page = 0
 	while len(urls) > 0:
 		url = urls.pop()
 		print url
+
 		r = requests.get(url)
-		soup = bs4.BeautifulSoup(r.text, "html.parser")
+		if url != config[site]["start_url"]:
+			if r.text == last_page:
+				break
+		last_page = r.text
+
+		soup = bs4.BeautifulSoup(r.text, "html5lib")
 		items = eval(config[site]["items"])
 		print "  %d items" % len(items)
 
@@ -33,16 +41,20 @@ def get_data(site, results, new_urls, paginate=True):
 					"price": price,
 				}
 				new_urls.append(url)
-
 		print "  %d new" % new
 
 		if paginate:
+			page += 1
 			try:
-				next_page = eval(config[site]["next_page"])
+				if site == "edil":
+					next_url = config[site]["next_url"] % page
+				else:
+					next_url = eval(config[site]["next_url"])
 			except Exception:
-				next_page = None
-			if next_page != None:
-				urls.append(next_page)
+				next_url = None
+			if next_url != None and next_url != last_url:
+				urls.append(next_url)
+				last_url = next_url
 
 	return (results, new_urls)
 
@@ -56,20 +68,46 @@ new_urls = []
 
 config = {
 	"blitz": {
-		"start_url": 'http://localhost/da.html',
+		"start_url": 'http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=84777',
 		"items": 'soup.find("ul", {"class": "productList"}).find_all("li")',
 		"url": 'item.find("a")["href"]',
 		"name": 'unicode(item.find("span", {"class": "prodName"}).string).strip()',
 		"location": 'unicode(item.find("span", {"class": "sgreen"}).next_sibling.string).strip()',
-		"price": 'unicode(item.find("span", {"class": "prodPret"}).string).strip()',
-		"next_page": 'soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]',
+		"price": 'unicode(item.find("span", {"class": "prodPret"}).string).replace(u"€/luna", "").strip()',
+		"next_url": 'soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]',
+	},
+	"welt": {
+		"start_url": 'http://www.weltimobiliare.ro/search?to=rent&type=s+a1&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
+		"items": 'soup.find_all("li", {"class": "estate-listing"})',
+		"url": '"http://www.weltimobiliare.ro" + item.find("h2").find("a")["href"]',
+		"name": 'unicode(item.find("ul", {"class": "details"}).find("li").find("b").string).strip()',
+		"location": 'unicode(item.find("ul", {"class": "details"}).find("li").next_sibling.next_sibling.find("b").next_sibling.string).replace(":", "").strip()',
+		"price": 'unicode(item.find("ul", {"class": "details"}).find("span", {"class": "price"}).find("b").string).replace(u"Â €/luna", "").strip()',
+		"next_url": '"http://www.weltimobiliare.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
+	},
+	"edil": {
+		"start_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=0&l=ro',
+		"items": 'soup.find_all("div", {"class": "line-content"})',
+		"url": '"http://www.edil.ro/" + item.find("div", {"class": "line-content-img"}).find("a")["href"]',
+		"name": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[0].find("p").find("a").string).strip()',
+		"location": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[3].find("p").string).replace("CLUJ-NAPOCA,", "").strip()',
+		"price": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[1].find("p").find("font").string).strip()',
+		"next_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=%d&l=ro',
+	},
+	"chirii": {
+		"start_url": 'http://www.chirii-cluj.ro/search?to=rent&type=s+a1&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
+		"items": 'soup.find_all("li", {"class": "listing"})',
+		"url": '"http://www.chirii-cluj.ro" + item.find("h2").find("a")["href"]',
+		"name": 'unicode(item.find("h2").find("a").string).strip()',
+		"location": 'unicode("")',
+		"price": 'unicode(item.find("div", {"class": "property_price"}).find("a").string).replace(u"Price: €", "").replace("/month", "").strip()',
+		"next_url": '"http://www.chirii-cluj.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
 	},
 }
 
 for site in config:
-	results, new_urls = get_data(site, results, new_urls, False)
-
-pickle.dump(results, open("results.pickle", "wb"))
+	results, new_urls = get_data(site, results, new_urls)
+	pickle.dump(results, open("results.pickle", "wb"))
 
 #================================================================================================== BUILD REPORT
 
