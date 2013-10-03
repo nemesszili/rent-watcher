@@ -6,6 +6,46 @@ import bs4
 import pickle
 import datetime
 import os
+import time
+
+config = {
+	"blitz": {
+		"start_url": 'http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=84777',
+		"items": 'soup.find("ul", {"class": "productList"}).find_all("li")',
+		"url": 'item.find("a")["href"]',
+		"name": 'unicode(item.find("span", {"class": "prodName"}).string).strip()',
+		"location": 'unicode(item.find("span", {"class": "sgreen"}).next_sibling.string).strip()',
+		"price": 'unicode(item.find("span", {"class": "prodPret"}).string).replace(u"€/luna", "").strip()',
+		"next_url": 'soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]',
+	},
+	"welt": {
+		"start_url": 'http://www.weltimobiliare.ro/search?to=rent&type=s+a1&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
+		"items": 'soup.find_all("li", {"class": "estate-listing"})',
+		"url": '"http://www.weltimobiliare.ro" + item.find("h2").find("a")["href"]',
+		"name": 'unicode(item.find("ul", {"class": "details"}).find("li").find("b").string).strip()',
+		"location": 'unicode(item.find("ul", {"class": "details"}).find("li").next_sibling.next_sibling.find("b").next_sibling.string).replace(":", "").strip()',
+		"price": 'unicode(item.find("ul", {"class": "details"}).find("span", {"class": "price"}).find("b").string).replace(u"Â €/luna", "").strip()',
+		"next_url": '"http://www.weltimobiliare.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
+	},
+	"edil": {
+		"start_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=0&l=ro',
+		"items": 'soup.find_all("div", {"class": "line-content"})',
+		"url": '"http://www.edil.ro/" + item.find("div", {"class": "line-content-img"}).find("a")["href"]',
+		"name": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[0].find("p").find("a").string).strip()',
+		"location": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[3].find("p").string).replace("CLUJ-NAPOCA,", "").strip()',
+		"price": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[1].find("p").find("font").string).strip()',
+		"next_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=%d&l=ro',
+	},
+	"chirii": {
+		"start_url": 'http://www.chirii-cluj.ro/search?to=rent&type=s+a1&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
+		"items": 'soup.find_all("li", {"class": "listing"})',
+		"url": '"http://www.chirii-cluj.ro" + item.find("h2").find("a")["href"]',
+		"name": 'unicode(item.find("h2").find("a").string).strip()',
+		"location": 'unicode("")',
+		"price": 'unicode(item.find("div", {"class": "property_price"}).find("a").string).replace(u"Price: €", "").replace("/month", "").strip()',
+		"next_url": '"http://www.chirii-cluj.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
+	},
+}
 
 #================================================================================================== GET DATA
 
@@ -58,78 +98,44 @@ def get_data(site, results, new_urls, paginate=True):
 
 	return (results, new_urls)
 
-#================================================================================================== LOAD, FETCH, SAVE
+#================================================================================================== LOAD, FETCH, SAVE, BUILD REPORT, SLEEP
 
-if not os.path.isfile("results.pickle"):
-	results = {}
-else:
-	results = pickle.load(open("results.pickle", "rb"))
-new_urls = []
+while True:
+	if not os.path.isfile("results.pickle"):
+		results = {}
+	else:
+		results = pickle.load(open("results.pickle", "rb"))
+	new_urls = []
 
-config = {
-	"blitz": {
-		"start_url": 'http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=84777',
-		"items": 'soup.find("ul", {"class": "productList"}).find_all("li")',
-		"url": 'item.find("a")["href"]',
-		"name": 'unicode(item.find("span", {"class": "prodName"}).string).strip()',
-		"location": 'unicode(item.find("span", {"class": "sgreen"}).next_sibling.string).strip()',
-		"price": 'unicode(item.find("span", {"class": "prodPret"}).string).replace(u"€/luna", "").strip()',
-		"next_url": 'soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]',
-	},
-	"welt": {
-		"start_url": 'http://www.weltimobiliare.ro/search?to=rent&type=s+a1&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
-		"items": 'soup.find_all("li", {"class": "estate-listing"})',
-		"url": '"http://www.weltimobiliare.ro" + item.find("h2").find("a")["href"]',
-		"name": 'unicode(item.find("ul", {"class": "details"}).find("li").find("b").string).strip()',
-		"location": 'unicode(item.find("ul", {"class": "details"}).find("li").next_sibling.next_sibling.find("b").next_sibling.string).replace(":", "").strip()',
-		"price": 'unicode(item.find("ul", {"class": "details"}).find("span", {"class": "price"}).find("b").string).replace(u"Â €/luna", "").strip()',
-		"next_url": '"http://www.weltimobiliare.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
-	},
-	"edil": {
-		"start_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=0&l=ro',
-		"items": 'soup.find_all("div", {"class": "line-content"})',
-		"url": '"http://www.edil.ro/" + item.find("div", {"class": "line-content-img"}).find("a")["href"]',
-		"name": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[0].find("p").find("a").string).strip()',
-		"location": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[3].find("p").string).replace("CLUJ-NAPOCA,", "").strip()',
-		"price": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[1].find("p").find("font").string).strip()',
-		"next_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=%d&l=ro',
-	},
-	"chirii": {
-		"start_url": 'http://www.chirii-cluj.ro/search?to=rent&type=s+a1&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
-		"items": 'soup.find_all("li", {"class": "listing"})',
-		"url": '"http://www.chirii-cluj.ro" + item.find("h2").find("a")["href"]',
-		"name": 'unicode(item.find("h2").find("a").string).strip()',
-		"location": 'unicode("")',
-		"price": 'unicode(item.find("div", {"class": "property_price"}).find("a").string).replace(u"Price: €", "").replace("/month", "").strip()',
-		"next_url": '"http://www.chirii-cluj.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
-	},
-}
+	for site in config:
+		results, new_urls = get_data(site, results, new_urls)
+		pickle.dump(results, open("results.pickle", "wb"))
 
-for site in config:
-	results, new_urls = get_data(site, results, new_urls)
-	pickle.dump(results, open("results.pickle", "wb"))
+	if len(new_urls) != 0:
+		f = open("results.html", "a")
+		s = '''<div class="update">%s</div>
+	<table>
+	''' % str(datetime.datetime.now())[:19]
+		f.write(s)
+		for url in new_urls:
+			s = '''	<tr>
+			<td><a href="%s">%s</a></td>
+			<td>%s</td>
+			<td>%s</td>
+		</tr>
+	''' % (url, results[url]["name"], results[url]["location"], results[url]["price"])
+			f.write(s.encode("utf8"))
 
-#================================================================================================== BUILD REPORT
+		s = '''</table>
+	'''
+		f.write(s)
+		f.close()
+		os.system("cat report_head.html results.html report_body.html > zeh_report.html")
+		os.system('zenity --warning --title="rent-watcher alert" --text="Update(s) available" &')
+	else:
+		os.system('zenity --info --title="rent-watcher status" --text="Run ok, nothing new" &')
 
-if len(new_urls) != 0:
-	f = open("results.html", "a")
-	s = '''<div class="update">%s</div>
-<table>
-''' % str(datetime.datetime.now())[:19]
-	f.write(s)
-	for url in new_urls:
-		s = '''	<tr>
-		<td><a href="%s">%s</a></td>
-		<td>%s</td>
-		<td>%s</td>
-	</tr>
-''' % (url, results[url]["name"], results[url]["location"], results[url]["price"])
-		f.write(s.encode("utf8"))
-
-	s = '''</table>
-'''
-	f.write(s)
-	f.close()
-	os.system("cat report_head.html results.html report_body.html > zeh_report.html")
+	print "Going to bed... ZzZzZzZzZzZzzz"
+	time.sleep(666)
 
 #==================================================================================================
