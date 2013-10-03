@@ -7,25 +7,24 @@ import pickle
 import datetime
 import os
 
-#================================================================================================== BLITZ
+#================================================================================================== GET DATA
 
-def get_blitz(start_url, results, new_urls, paginate=True):
-	urls = [start_url]
-	new_urls = []
+def get_data(site, results, new_urls, paginate=True):
+	urls = [config[site]["start_url"]]
 	while len(urls) > 0:
 		url = urls.pop()
 		print url
 		r = requests.get(url)
 		soup = bs4.BeautifulSoup(r.text, "html.parser")
-		items = soup.find("ul", {"class": "productList"}).find_all("li")
+		items = eval(config[site]["items"])
 		print "  %d items" % len(items)
 
 		new = 0
 		for item in items:
-			url = item.find("a")["href"]
-			name = unicode(item.find("span", {"class": "prodName"}).string).strip()
-			location = unicode(item.find("span", {"class": "sgreen"}).next_sibling.string).strip()
-			price = unicode(item.find("span", {"class": "prodPret"}).string).strip()
+			url = eval(config[site]["url"])
+			name = eval(config[site]["name"])
+			location = eval(config[site]["location"])
+			price = eval(config[site]["price"])
 			if url not in results:
 				new += 1
 				results[url] = {
@@ -39,7 +38,7 @@ def get_blitz(start_url, results, new_urls, paginate=True):
 
 		if paginate:
 			try:
-				next_page = soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]
+				next_page = eval(config[site]["next_page"])
 			except Exception:
 				next_page = None
 			if next_page != None:
@@ -55,7 +54,20 @@ else:
 	results = pickle.load(open("results.pickle", "rb"))
 new_urls = []
 
-results, new_urls = get_blitz("http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=83936", results, new_urls)
+config = {
+	"blitz": {
+		"start_url": 'http://localhost/da.html',
+		"items": 'soup.find("ul", {"class": "productList"}).find_all("li")',
+		"url": 'item.find("a")["href"]',
+		"name": 'unicode(item.find("span", {"class": "prodName"}).string).strip()',
+		"location": 'unicode(item.find("span", {"class": "sgreen"}).next_sibling.string).strip()',
+		"price": 'unicode(item.find("span", {"class": "prodPret"}).string).strip()',
+		"next_page": 'soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]',
+	},
+}
+
+for site in config:
+	results, new_urls = get_data(site, results, new_urls, False)
 
 pickle.dump(results, open("results.pickle", "wb"))
 
