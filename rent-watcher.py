@@ -131,7 +131,7 @@ def get_data(site, results, new_urls, paginate=True):
 		if paginate:
 			page += 1
 			try:
-				if site == "edil":
+				if site.find("edil") != -1:
 					next_url = config[site]["next_url"] % page
 				else:
 					next_url = eval(config[site]["next_url"])
