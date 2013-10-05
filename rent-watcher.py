@@ -10,24 +10,33 @@ import time
 
 config = {
 	"blitz": {
-		"start_url": 'http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=84777',
+		"start_url": 'http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=85206',
 		"items": 'soup.find("ul", {"class": "productList"}).find_all("li")',
 		"url": 'item.find("a")["href"]',
 		"name": 'unicode(item.find("span", {"class": "prodName"}).string).strip()',
 		"location": 'unicode(item.find("span", {"class": "sgreen"}).next_sibling.string).strip()',
-		"price": 'unicode(item.find("span", {"class": "prodPret"}).string).replace(u"€/luna", "").strip()',
+		"price": 'unicode(item.find("span", {"class": "prodPret"}).string).strip()',
 		"next_url": 'soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]',
 	},
 	"welt": {
-		"start_url": 'http://www.weltimobiliare.ro/search?to=rent&type=s+a1&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
+		"start_url": 'http://www.weltimobiliare.ro/search?to=rent&type=s+a1+a2&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
 		"items": 'soup.find_all("li", {"class": "estate-listing"})',
 		"url": '"http://www.weltimobiliare.ro" + item.find("h2").find("a")["href"]',
 		"name": 'unicode(item.find("ul", {"class": "details"}).find("li").find("b").string).strip()',
 		"location": 'unicode(item.find("ul", {"class": "details"}).find("li").next_sibling.next_sibling.find("b").next_sibling.string).replace(":", "").strip()',
-		"price": 'unicode(item.find("ul", {"class": "details"}).find("span", {"class": "price"}).find("b").string).replace(u"Â €/luna", "").strip()',
+		"price": 'unicode(item.find("ul", {"class": "details"}).find("span", {"class": "price"}).find("b").string).strip()',
 		"next_url": '"http://www.weltimobiliare.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
 	},
-	"edil": {
+	"edil-garsoniere": {
+		"start_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=0&nr_cam=-1&imobil_nou=0&data=1&sort_2=1&st_limit=0&l=ro',
+		"items": 'soup.find_all("div", {"class": "line-content"})',
+		"url": '"http://www.edil.ro/" + item.find("div", {"class": "line-content-img"}).find("a")["href"]',
+		"name": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[0].find("p").find("a").string).strip()',
+		"location": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[3].find("p").string).replace("CLUJ-NAPOCA,", "").strip()',
+		"price": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[1].find("p").find("font").string).strip()',
+		"next_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=%d&l=ro',
+	},
+	"edil-apartamente1": {
 		"start_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=0&l=ro',
 		"items": 'soup.find_all("div", {"class": "line-content"})',
 		"url": '"http://www.edil.ro/" + item.find("div", {"class": "line-content-img"}).find("a")["href"]',
@@ -36,14 +45,50 @@ config = {
 		"price": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[1].find("p").find("font").string).strip()',
 		"next_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=%d&l=ro',
 	},
-	"chirii": {
-		"start_url": 'http://www.chirii-cluj.ro/search?to=rent&type=s+a1&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
+	"edil-apartamente2": {
+		"start_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=2&imobil_nou=0&data=1&sort_2=1&st_limit=0&l=ro',
+		"items": 'soup.find_all("div", {"class": "line-content"})',
+		"url": '"http://www.edil.ro/" + item.find("div", {"class": "line-content-img"}).find("a")["href"]',
+		"name": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[0].find("p").find("a").string).strip()',
+		"location": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[3].find("p").string).replace("CLUJ-NAPOCA,", "").strip()',
+		"price": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[1].find("p").find("font").string).strip()',
+		"next_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=1&imobil_nou=0&data=1&sort_2=1&st_limit=%d&l=ro',
+	},
+	"chirii-cluj": {
+		"start_url": 'http://www.chirii-cluj.ro/search?type=s+a1+a2&hood=1+19+26+28+48+49+30+32+50+51+52&price-max=270',
 		"items": 'soup.find_all("li", {"class": "listing"})',
 		"url": '"http://www.chirii-cluj.ro" + item.find("h2").find("a")["href"]',
 		"name": 'unicode(item.find("h2").find("a").string).strip()',
 		"location": 'unicode("")',
-		"price": 'unicode(item.find("div", {"class": "property_price"}).find("a").string).replace(u"Price: €", "").replace("/month", "").strip()',
+		"price": 'unicode(item.find("div", {"class": "property_price"}).find("a").string).strip()',
 		"next_url": '"http://www.chirii-cluj.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
+	},
+	"piata-az-garsoniere": {
+		"start_url": 'http://www.piata-az.ro/anunturi/garsoniere-1030?f_valuta=+70525&f_price=0%2C270&f_tip_oferta_inchirieri=+70410',
+		"items": 'soup.find("div", {"class": "anunt list"}).find_all("div", {"class": "anunt"})',
+		"url": 'item.find("h3").find("a")["href"]',
+		"name": 'unicode(item.find("h3").find("a").string).strip()',
+		"location": 'unicode("")',
+		"price": 'unicode(item.find("span", {"class": "price"}).contents[0]).strip()',
+		"next_url": 'soup.find("div", {"class": "pagination"}).find("span", {"class": "current"}).next_sibling.next_sibling["href"]',
+	},
+	"piata-az-apartamente1": {
+		"start_url": 'http://www.piata-az.ro/anunturi/apartamente-1031?f_valuta=+70525&f_price=0%2C270&f_tip_oferta_inchirieri=+70410&f_imobiliare_camere=1',
+		"items": 'soup.find("div", {"class": "anunt list"}).find_all("div", {"class": "anunt"})',
+		"url": 'item.find("h3").find("a")["href"]',
+		"name": 'unicode(item.find("h3").find("a").string).strip()',
+		"location": 'unicode("")',
+		"price": 'unicode(item.find("span", {"class": "price"}).contents[0]).strip()',
+		"next_url": 'soup.find("div", {"class": "pagination"}).find("span", {"class": "current"}).next_sibling.next_sibling["href"]',
+	},
+	"piata-az-apartamente2": {
+		"start_url": 'http://www.piata-az.ro/anunturi/apartamente-1031?f_valuta=+70525&f_price=0%2C270&f_tip_oferta_inchirieri=+70410&f_imobiliare_camere=1',
+		"items": 'soup.find("div", {"class": "anunt list"}).find_all("div", {"class": "anunt"})',
+		"url": 'item.find("h3").find("a")["href"]',
+		"name": 'unicode(item.find("h3").find("a").string).strip()',
+		"location": 'unicode("")',
+		"price": 'unicode(item.find("span", {"class": "price"}).contents[0]).strip()',
+		"next_url": 'soup.find("div", {"class": "pagination"}).find("span", {"class": "current"}).next_sibling.next_sibling["href"]',
 	},
 }
 
@@ -131,7 +176,7 @@ while True:
 		f.write(s)
 		f.close()
 		os.system("cat report_head.html results.html report_body.html > zeh_report.html")
-		os.system('zenity --warning --title="rent-watcher alert" --text="Update(s) available" &')
+		os.system('zenity --warning --title="rent-watcher alert" --text="%d updates available" &' % len(new_urls))
 	else:
 		os.system('zenity --info --title="rent-watcher status" --text="Run ok, nothing new" &')
 
