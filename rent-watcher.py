@@ -10,7 +10,7 @@ import time
 
 config = {
 	"blitz": {
-		"start_url": 'http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=85209',
+		"start_url": 'http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=85453',
 		"items": 'soup.find("ul", {"class": "productList"}).find_all("li")',
 		"url": 'item.find("a")["href"]',
 		"name": 'unicode(item.find("span", {"class": "prodName"}).string).strip()',
@@ -19,7 +19,7 @@ config = {
 		"next_url": 'soup.find("div", {"class": "pageNav"}).find("a", {"class": "active"}).parent.next_sibling.find("a")["href"]',
 	},
 	"welt": {
-		"start_url": 'http://www.weltimobiliare.ro/search?to=rent&type=a2+h2&hood=1+19+26+48+49+32+50+51+52&price-max=270',
+		"start_url": 'http://www.weltimobiliare.ro/search?to=rent&type=a1+a2&hood=1+19+26+48+49+32+50+51+52&price-min=150&price-max=200',
 		"items": 'soup.find_all("li", {"class": "estate-listing"})',
 		"url": '"http://www.weltimobiliare.ro" + item.find("h2").find("a")["href"]',
 		"name": 'unicode(item.find("ul", {"class": "details"}).find("li").find("b").string).strip()',
@@ -28,16 +28,16 @@ config = {
 		"next_url": '"http://www.weltimobiliare.ro" + soup.find("li", {"class": "page selected"}).next_sibling.next_sibling.find("a")["href"]',
 	},
 	"edil": {
-		"start_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=2&imobil_nou=0&data=1&sort_2=1&st_limit=0&l=ro',
+		"start_url": 'http://www.edil.ro/actions/cautare_avansata.php?loc=CJ_00&tip_imob=1&tip_tranzactie=2&cam_min=1&cam_max=2&pret_min=150&pret_max=200&oferte_recomandate=0&exclus_demisol=demisol&exclus_parter=parter&exclus_mansarda=&exclus_ultim_etaj=ultim_etaj&st_limit=0&l=ro&monitorizare=1',
 		"items": 'soup.find_all("div", {"class": "line-content"})',
 		"url": '"http://www.edil.ro/" + item.find("div", {"class": "line-content-img"}).find("a")["href"]',
 		"name": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[0].find("p").find("a").string).strip()',
 		"location": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[3].find("p").string).replace("CLUJ-NAPOCA,", "").strip()',
 		"price": 'unicode(item.find("div", {"class": "line-content-details"}).find_all("td")[1].find("p").find("font").string).strip()',
-		"next_url": 'http://www.edil.ro/actions/getOferte.php?jud=CJ&contract=2&imobil=1&nr_cam=2&imobil_nou=0&data=1&sort_2=1&st_limit=%d&l=ro',
+		"next_url": 'http://www.edil.ro/actions/cautare_avansata.php?loc=CJ_00&tip_imob=1&tip_tranzactie=2&cam_min=1&cam_max=2&pret_min=150&pret_max=200&oferte_recomandate=0&exclus_demisol=demisol&exclus_parter=parter&exclus_mansarda=&exclus_ultim_etaj=ultim_etaj&st_limit=%d&l=ro&monitorizare=1',
 	},
 	"chirii": {
-		"start_url": 'http://www.chirii-cluj.ro/search?type=sn+s+a2+h2&hood=1+19+26+48+49+32+50+51+52&price-max=270',
+		"start_url": 'http://www.chirii-cluj.ro/cautare?type=a1+a2&hood=1+19+26+48+49+32+50+51+52&price-min=150&price-max=200',
 		"items": 'soup.find_all("li", {"class": "listing"})',
 		"url": '"http://www.chirii-cluj.ro" + item.find("h2").find("a")["href"]',
 		"name": 'unicode(item.find("h2").find("a").string).strip()',
