@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import codecs
 import requests
 import bs4
 import pickle
 import datetime
 import os
+import pystache
 import smtplib
 import time
 from email.mime.multipart import MIMEMultipart
@@ -16,6 +18,7 @@ from rent_conf import *
 #================================================================================================== GET DATA
 
 def get_data(site, results, new_urls, paginate=True):
+	time = datetime.datetime.now()
 	urls = [config[site]["start_url"]]
 	last_url = config[site]["start_url"]
 	page = 0
@@ -45,6 +48,7 @@ def get_data(site, results, new_urls, paginate=True):
 					"name": name,
 					"location": location,
 					"price": price,
+					"time": time,
 				}
 				new_urls.append(url)
 		print "  %d new" % new
@@ -106,6 +110,8 @@ while True:
 		results = {}
 	else:
 		results = pickle.load(open("results.pickle", "rb"))
+		# sorted_results = sorted([url, info for url, info in results.items()]
+		# 						key=lambda url_info: url_info[1].get('time', None))
 	new_urls = []
 
 	for site in config:
@@ -113,31 +119,26 @@ while True:
 		pickle.dump(results, open("results.pickle", "wb"))
 
 	if len(new_urls) != 0:
-		f = open("results.html", "a")
-		s = '''<div class="update">%s</div>
-	<table>
-	''' % str(datetime.datetime.now())[:19]
-		f.write(s)
-		for url in new_urls:
-			s = '''	<tr>
-			<td><a href="%s">%s</a></td>
-			<td>%s</td>
-			<td>%s</td>
-		</tr>
-	''' % (url, results[url]["name"], results[url]["location"], results[url]["price"])
-			f.write(s.encode("utf8"))
+		now_str = str(datetime.datetime.now())[:19]
 
-		s = '''</table>
-	'''
-		f.write(s)
-		f.close()
-		os.system("cat report_head.html results.html report_body.html > zeh_report.html")
+		offers = [{'url': url,
+				   'name': results[url]['name'],
+				   'location': results[url]['location'],
+				   'price': results[url]['price'],
+				   } for url in new_urls]
+		context = {'date': str(datetime.datetime.now())[:19],
+		           'offers': offers}
+		
+		r = pystache.Renderer()
+		report = r.render_path('report_tmpl.html', context)
+		with codecs.open('zeh_report.html', 'w', encoding='utf-8') as report_f:
+			report_f.write(report)
 
 		email_report()
 
 		os.system('zenity --warning --title="rent-watcher alert" --text="Update(s) available" &')
-	else:
-		os.system('zenity --info --title="rent-watcher status" --text="Run ok, nothing new" &')
+	# else:
+	# 	os.system('zenity --info --title="rent-watcher status" --text="Run ok, nothing new" &')
 
 	print "Going to bed... ZzZzZzZzZzZzzz"
 	time.sleep(666)

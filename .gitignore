@@ -1,1 +1,6 @@
+*.pyc
+*conf.py
+results.*
 *~
+*.sublime-*
+zeh_report.html
