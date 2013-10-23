@@ -5,9 +5,21 @@ import requests
 import bs4
 import re
 
-r = requests.get("http://localhost/da.html")
+r = requests.get("http://mercador.ro/imobiliare/apartamente-garsoniere-de-inchiriat/1-camera/cluj-napoca/?search%5Bfilter_float_price%3Ato%5D=290&search%5Bprivate_business%5D=private")
 soup = bs4.BeautifulSoup(r.text, "html5lib")
 pad = 13
+
+#================================================================================================== MERCADOR
+
+items = soup.find("table", {"id": "offers_table"}).find_all("table")
+item = items[0]
+print "url".ljust(pad) + item.find("a", {"class": "detailsLink"})["href"]
+print "name".ljust(pad) + unicode(item.find("h3").find("span").string).strip()
+print "location".ljust(pad) + unicode(item.find("small", {"class": "breadcrumb"}).contents[2].lstrip('Cluj-Napoca, ')).strip()
+print "price".ljust(pad) + unicode(item.find("p", {"class": "price"}).find("strong").string).split()[0].strip()
+print "next_url".ljust(pad) + soup.find("span", {"class": "next"}).find("a", {"class": "pageNextPrev"})["href"]
+
+
 
 #================================================================================================== BLITZ
 
