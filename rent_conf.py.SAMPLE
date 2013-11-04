@@ -3,6 +3,13 @@
 EMAIL_TO = ['YOU@gmail.com']            # only gmail is supported, see below
 SMTP_SERVER = 'gmail-smtp-in.l.google.com'  # incoming mail, accepts only gmail
 
+def mercador_url(item):
+    a = item.find("a", {"class": "detailsLink"})
+    if a is not None:
+        return a['href']
+    else:
+        print('mercador_url: %s' % a)
+
 config = {
 	"blitz": {
 		"start_url": 'http://www.blitz-imobiliare.ro/inchirieri-apartamente-cluj/searchId=85206',
@@ -88,9 +95,9 @@ config = {
 	"mercador": {
         "start_url": 'http://mercador.ro/imobiliare/apartamente-garsoniere-de-inchiriat/1-camera/cluj-napoca/?search%5Bfilter_float_price%3Ato%5D=290&search%5Bprivate_business%5D=private',
         "items": 'soup.find("table", {"id": "offers_table"}).find_all("table")',
-        "url": 'item.find("a", {"class": "detailsLink"})["href"]',
+        "url": mercador_url,
         "name": 'unicode(item.find("h3").find("span").string).strip()',
-        "location": 'unicode(item.find("small", {"class": "breadcrumb"}).contents[2].lstrip("Cluj-Napoca, ")).strip()',
+        "location": 'unicode(item.find("small", {"class": "breadcrumb"}).contents[2].replace("Cluj-Napoca, ", "", 1)).strip()',
         "price": 'unicode(item.find("p", {"class": "price"}).find("strong").string).split()[0].strip()',
         "next_url": 'soup.find("span", {"class": "next"}).find("a", {"class": "pageNextPrev"})["href"]'
     }

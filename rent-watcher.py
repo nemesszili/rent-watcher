@@ -38,7 +38,8 @@ def get_data(site, results, new_urls, paginate=True):
 
         new = 0
         for item in items:
-            url = eval(config[site]["url"])
+            url_func = config[site]["url"]
+            url = url_func(item) if callable(url_func) else eval(url_func)
             name = eval(config[site]["name"])
             location = eval(config[site]["location"])
             price = eval(config[site]["price"])
@@ -122,7 +123,7 @@ while True:
         now_str = str(datetime.datetime.now())[:19]
 
         mobile_url = lambda url: (url.replace('www', 'm').replace('oras-cluj-napoca/', '')
-                                  if 'piata-az' in url
+                                  if url is not None and 'piata-az' in url
                                   else url)
         offers = [{'url': mobile_url(url),
                    'name': results[url]['name'],
