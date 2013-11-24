@@ -159,8 +159,8 @@ while True:
         show_results(new_urls)
         pickle.dump(results, open("results.pickle", "wb"))
     except Exception as e:
-        print e
-        traceback.print_last()
+        print "Error: %s" % e
+        traceback.print_stack()
 
 
     print "Going to bed... ZzZzZzZzZzZzzz"
