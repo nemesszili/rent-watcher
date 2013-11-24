@@ -5,20 +5,22 @@ import codecs
 import requests
 import bs4
 import pickle
-import datetime
 import os
 import pystache
 import smtplib
 import time
+import traceback
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from datetime import datetime, timedelta
 
 from rent_conf import *
 
 #================================================================================================== GET DATA
 
-def get_data(site, results, new_urls, paginate=True):
-    time = datetime.datetime.now()
+def get_data(site, results, paginate=True, recent=None):
+    new_urls = []
+    time = datetime.now()
     urls = [config[site]["start_url"]]
     last_url = config[site]["start_url"]
     page = 0
@@ -69,6 +71,9 @@ def get_data(site, results, new_urls, paginate=True):
 
     return (results, new_urls)
 
+def get_recent(results, since):
+    return [url for url, info in results.items() if info['time'] > since]
+
 #================================================================================================== LOAD, FETCH, SAVE, BUILD REPORT, SLEEP
 
 
@@ -105,22 +110,9 @@ def email_report(to=EMAIL_TO, html_file='zeh_report.html'):
               subject='Ne mutam!', message=message,
               smtpserver=SMTP_SERVER)
 
-
-while True:
-    if not os.path.isfile("results.pickle"):
-        results = {}
-    else:
-        results = pickle.load(open("results.pickle", "rb"))
-        # sorted_results = sorted([url, info for url, info in results.items()]
-        #                         key=lambda url_info: url_info[1].get('time', None))
-    new_urls = []
-
-    for site in config:
-        results, new_urls = get_data(site, results, new_urls)
-        pickle.dump(results, open("results.pickle", "wb"))
-
+def show_results(new_urls):
     if len(new_urls) != 0:
-        now_str = str(datetime.datetime.now())[:19]
+        now_str = str(datetime.now())[:19]
 
         mobile_url = lambda url: (url.replace('www', 'm').replace('oras-cluj-napoca/', '')
                                   if url is not None and 'piata-az' in url
@@ -130,7 +122,7 @@ while True:
                    'location': results[url]['location'],
                    'price': results[url]['price'],
                    } for url in new_urls]
-        context = {'date': str(datetime.datetime.now())[:19],
+        context = {'date': str(datetime.now())[:19],
                    'offers': offers}
         
         r = pystache.Renderer()
@@ -141,8 +133,35 @@ while True:
         email_report()
 
         os.system('zenity --warning --title="rent-watcher alert" --text="Update(s) available" &')
-    # else:
-    #     os.system('zenity --info --title="rent-watcher status" --text="Run ok, nothing new" &')
+
+
+# since = yesterday = datetime.now() - timedelta(days=1)
+since = None
+
+while True:
+    if not os.path.isfile("results.pickle"):
+        results = {}
+    else:
+        results = pickle.load(open("results.pickle", "rb"))
+        # sorted_results = sorted([url, info for url, info in results.items()]
+        #                         key=lambda url_info: url_info[1].get('time', None))
+
+    new_urls = []
+    for site in config:
+        results, more_new_urls = get_data(site, results)
+        new_urls += more_new_urls
+
+        if since:
+            new_urls += get_recent(results, since)
+            since = None
+
+    try:
+        show_results(new_urls)
+        pickle.dump(results, open("results.pickle", "wb"))
+    except Exception as e:
+        print e
+        traceback.print_last()
+
 
     print "Going to bed... ZzZzZzZzZzZzzz"
     time.sleep(666)
