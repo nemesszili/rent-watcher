@@ -148,8 +148,11 @@ while True:
 
     new_urls = []
     for site in config:
-        results, more_new_urls = get_data(site, results)
-        new_urls += more_new_urls
+        try:
+            results, more_new_urls = get_data(site, results)
+            new_urls += more_new_urls
+        except requests.exceptions.RequestException as e:
+            print "Error " + str(e)
 
         if since:
             new_urls += get_recent(results, since)
