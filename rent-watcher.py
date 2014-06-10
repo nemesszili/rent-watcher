@@ -42,9 +42,14 @@ def get_data(site, results, paginate=True, recent=None):
         for item in items:
             url_func = config[site]["url"]
             url = url_func(item) if callable(url_func) else eval(url_func)
-            name = eval(config[site]["name"])
-            location = eval(config[site]["location"])
-            price = eval(config[site]["price"])
+            #print "*****", item
+            try:
+                name = eval(config[site]["name"])
+                location = eval(config[site]["location"])
+                price = eval(config[site]["price"])
+            except (AttributeError, IndexError) as e:
+                print "faled to parse 1"
+                continue
             if url not in results:
                 new += 1
                 results[url] = {
@@ -97,7 +102,11 @@ def sendemail(from_addr, to_addr_list,
     msg.attach(part1)
     msg.attach(part2)
 
-    server = smtplib.SMTP(smtpserver)
+    if ':' in smtpserver:
+        host, port = smtpserver.split(':')
+    else:
+        host, port = smtpserver, None
+    server = smtplib.SMTP(host, port)
     if login and password:
         server.starttls()
         server.login(login,password)
