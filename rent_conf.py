@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-EMAIL_TO = ['nemesszili@gmail.com']            # only gmail is supported, see below
+EMAIL_TO = ['YOU@gmail.com']            # only gmail is supported, see below
 SMTP_SERVER = 'gmail-smtp-in.l.google.com'  # incoming mail, accepts only gmail
 
 def mercador_url(item):
