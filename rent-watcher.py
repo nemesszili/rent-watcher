@@ -16,6 +16,10 @@ from datetime import datetime, timedelta
 
 from rent_conf import *
 
+ROOMS = 3
+MAX_PRICE = 450
+PAGES = 50
+
 #================================================================================================== GET DATA
 
 def get_data(site, results, paginate=True, recent=None):
@@ -26,7 +30,7 @@ def get_data(site, results, paginate=True, recent=None):
     page = 0
     while len(urls) > 0:
         url = urls.pop()
-        print url
+        print(url)
 
         r = requests.get(url)
         if url != config[site]["start_url"]:
@@ -36,30 +40,38 @@ def get_data(site, results, paginate=True, recent=None):
 
         soup = bs4.BeautifulSoup(r.text, "html5lib")
         items = eval(config[site]["items"])
-        print "  %d items" % len(items)
+        print("  %d items" % len(items))
 
         new = 0
         for item in items:
             url_func = config[site]["url"]
             url = url_func(item) if callable(url_func) else eval(url_func)
-            #print "*****", item
+            # print("*****", item)
             try:
                 name = eval(config[site]["name"])
                 location = eval(config[site]["location"])
                 price = eval(config[site]["price"])
+                rooms = eval(config[site]["rooms"])
             except (AttributeError, IndexError) as e:
-                print "faled to parse 1"
+                print("faled to parse 1")
                 continue
             if url not in results:
                 new += 1
-                results[url] = {
-                    "name": name,
-                    "location": location,
-                    "price": price,
-                    "time": time,
-                }
-                new_urls.append(url)
-        print "  %d new" % new
+                print(rooms + " rooms for " + price)
+
+                if price and '.' not in price:
+                    if '?' not in price:
+                        val = int(price.split(" ")[0])
+                        if int(rooms) == ROOMS and val <= MAX_PRICE:
+                            print("**********\nHIT\n**********")
+                            results[url] = {
+                                "name": name,
+                                "location": location,
+                                "price": price,
+                                "time": time,
+                            }
+                            new_urls.append(url)
+        print("  %d new" % new)
 
         if paginate:
             page += 1
@@ -78,46 +90,6 @@ def get_data(site, results, paginate=True, recent=None):
 
 def get_recent(results, since):
     return [url for url, info in results.items() if info['time'] > since]
-
-#================================================================================================== LOAD, FETCH, SAVE, BUILD REPORT, SLEEP
-
-
-def sendemail(from_addr, to_addr_list,
-              subject, message,
-              login=None, password=None,
-              smtpserver='smtp.gmail.com:587'):
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = ','.join(to_addr_list)
-
-    # Record the MIME types of both parts - text/plain and text/html.
-    part1 = MIMEText('this is a text only preview, does your email support html ?', 'plain')
-    part2 = MIMEText(message, 'html')
-
-    # Attach parts into message container.
-    # According to RFC 2046, the last part of a multipart message, in this case
-    # the HTML message, is best and preferred.
-    msg.attach(part1)
-    msg.attach(part2)
-
-    if ':' in smtpserver:
-        host, port = smtpserver.split(':')
-    else:
-        host, port = smtpserver, None
-    server = smtplib.SMTP(host, port)
-    if login and password:
-        server.starttls()
-        server.login(login,password)
-    problems = server.sendmail(from_addr, to_addr_list, msg.as_string())
-    server.quit()
-
-def email_report(to=EMAIL_TO, html_file='zeh_report.html'):
-    message = open(html_file).read()
-    sendemail(from_addr='nemutam@stirbu.name', to_addr_list=to,
-              subject='Ne mutam!', message=message,
-              smtpserver=SMTP_SERVER)
 
 def show_results(new_urls):
     if len(new_urls) != 0:
@@ -139,11 +111,6 @@ def show_results(new_urls):
         with codecs.open('zeh_report.html', 'w', encoding='utf-8') as report_f:
             report_f.write(report)
 
-        email_report()
-
-        os.system('zenity --warning --title="rent-watcher alert" --text="Update(s) available" &')
-
-
 # since = yesterday = datetime.now() - timedelta(days=1)
 since = None
 
@@ -157,11 +124,20 @@ while True:
 
     new_urls = []
     for site in config:
-        try:
-            results, more_new_urls = get_data(site, results)
-            new_urls += more_new_urls
-        except requests.exceptions.RequestException as e:
-            print "Error " + str(e)
+        if site == 'nemutam':
+            try:
+                results, more_new_urls = get_data(site, results)
+                new_urls += more_new_urls
+            except requests.exceptions.RequestException as e:
+                print("Error " + str(e))
+
+            for page in range(1, PAGES):
+                try:
+                    config[site]['start_url'] = 'https://nemutam.com/?pag=' + str(page + 1)
+                    results, more_new_urls = get_data(site, results)
+                    new_urls += more_new_urls
+                except requests.exceptions.RequestException as e:
+                    print("Error " + str(e))
 
         if since:
             new_urls += get_recent(results, since)
@@ -171,11 +147,11 @@ while True:
         show_results(new_urls)
         pickle.dump(results, open("results.pickle", "wb"))
     except Exception as e:
-        print "Error: %s" % e
+        print("Error: %s" % e)
         traceback.print_stack()
 
 
-    print "Going to bed... ZzZzZzZzZzZzzz"
-    time.sleep(666)
+    print("Going to bed... ZzZzZzZzZzZzzz")
+    time.sleep(120)
 
 #==================================================================================================
